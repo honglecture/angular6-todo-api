@@ -1,0 +1,44 @@
+const express = require('express');
+const jwt = require('jsonwebtoken');
+
+const { verifyToken, deprecated } = require('./middlewares');
+
+const router = express.Router();
+
+//router.use(deprecated); 새로운 버전 있으면 막는 미들웨어
+
+router.post('/token', async (req, res) => {
+    const { clientSecret } = req.body;
+    try {
+      if (clientSecret!==process.env.CLIENT_SECRET) {
+        return res.status(401).json({
+          code: 401,
+          message: '등록되지 않은 클라이언트입니다.'
+        });
+      }
+      const token = jwt.sign({
+        id: "tempId",
+        nickname: "tempNickname"
+      }, process.env.JWT_SECRET, {
+        expiresIn: '10m', // 1분
+        issuer: 'picknroll'
+      });
+      return res.json({
+        code: 200,
+        message: '토큰이 발급되었습니다',
+        token
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({
+        code: 500,
+        message: '서버 에러',
+      });
+    }
+  });
+
+router.get('/test', verifyToken, (req, res)=>{
+    res.json(req.decoded);
+});
+
+module.exports = router;
